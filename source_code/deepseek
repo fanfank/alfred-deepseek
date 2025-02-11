@@ -1,0 +1,336 @@
+#!/usr/bin/osascript -l JavaScript
+
+const AssistantName = "deepseek"
+
+// indicate which model to use
+const PowerfulMode = {
+  // Private variable, using closure protection
+  _mode: "0",
+
+  // Get current mode
+  get() {
+    return this._mode
+  },
+
+  // Set internal state only
+  set(value) {
+    if (typeof value !== 'string') {
+      value = String(value)
+    }
+    this._mode = value
+    return this._mode
+  },
+
+  // Initialize from environment variable
+  initFromEnv() {
+    const envValue = envVar("powerful_mode")
+    if (envValue) {
+      this._mode = envValue
+    }
+    return this._mode
+  }
+}
+
+function envVar(varName) {
+  return $.NSProcessInfo
+    .processInfo
+    .environment
+    .objectForKey(varName).js
+}
+
+function fileExists(path) {
+  return $.NSFileManager.defaultManager.fileExistsAtPath(path)
+}
+
+function fileModified(path) {
+  return $.NSFileManager.defaultManager
+    .attributesOfItemAtPathError(path, undefined)
+    .js["NSFileModificationDate"].js
+    .getTime()
+}
+
+function writeFile(path, text) {
+  $(text).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, undefined)
+}
+
+function deleteFile(path) {
+  return $.NSFileManager.defaultManager.removeItemAtPathError(path, undefined)
+}
+
+function markdownChat(messages, ignoreLastInterrupted = true) {
+  return messages.reduce((accumulator, current, index, allMessages) => {
+    if (current["role"] === "assistant") {
+      return `${accumulator}${current["reasoning_content"]}${current["content"]}\n\n`
+    }
+
+    if (current["role"] === "user") {
+      const userRawMessage = current["content"].split("\n").map(line => `${line}`).join("\n") // support multi-line questions (e.g. via External Trigger)
+      const userMessage = current?.["powerful_mode"] === "1" ? `> ## 💥：${userRawMessage}` : `> ## 💬：${userRawMessage}`// Add style to user message
+
+      const userTwice = allMessages[index + 1]?.["role"] === "user" // "user" role twice in a row
+      const lastMessage = index === allMessages.length - 1 // "user" is last message
+
+      return userTwice || (lastMessage && !ignoreLastInterrupted) ?
+        `${accumulator}${userMessage}\n\n[Answer Interrupted]\n\n` :
+        `${accumulator}${userMessage}\n\n`
+    }
+
+    // Ignore any other role
+    return accumulator
+  }, "")
+}
+
+function startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile) {
+  $.NSFileManager.defaultManager.createFileAtPathContentsAttributes(streamFile, undefined, undefined) // Create empty file
+
+  const baseMessages = systemPrompt
+    ? [{ role: "system", content: systemPrompt }].concat(contextChat)
+    : contextChat
+
+  const messages = baseMessages.map(({ role, content }) => ({
+    role,
+    content,
+  }))
+
+  const task = $.NSTask.alloc.init
+  const stdout = $.NSPipe.pipe
+
+  task.executableURL = $.NSURL.fileURLWithPath("/usr/bin/curl")
+  task.arguments = [
+    arkAPIEndpoint,
+    "--speed-limit", "0", "--speed-time", "5", // Abort stalled connection after a few seconds
+    "--silent", "--no-buffer",
+    "--header", "Content-Type: application/json",
+    "--header", `Authorization: Bearer ${arkAPIKey}`,
+    "--data", JSON.stringify({ model: arkTargetModelEndpoint, messages: messages, stream: true }),
+    "--output", streamFile
+  ]
+
+  task.standardOutput = stdout
+  task.launchAndReturnError(false)
+  writeFile(pidStreamFile, task.processIdentifier.toString())
+}
+
+function readChat(path) {
+  const chatString = $.NSString.stringWithContentsOfFileEncodingError(path, $.NSUTF8StringEncoding, undefined).js
+  return JSON.parse(chatString)
+}
+
+function appendChat(path, message) {
+  const ongoingChat = readChat(path).concat(message)
+  const chatString = JSON.stringify(ongoingChat)
+  writeFile(path, chatString)
+}
+
+function appendChatHelper(path, reasoningText, contentText) {
+  if (!reasoningText && !contentText) return
+  const message = {
+    role: "assistant",
+    reasoning_content: reasoningText ?? "",
+    content: contentText ?? ""
+  }
+  appendChat(path, message)
+}
+
+function readArkStream(streamFile, chatFile, pidStreamFile) {
+  const streamMarker = envVar("stream_marker") === "1"
+
+  // When starting a stream or continuing from a closed window, add a marker to determine the location of future replacements
+  if (streamMarker) return JSON.stringify({
+    rerun: 0.1,
+    variables: { streaming_now: true },
+    response: "…",
+    behaviour: { response: "append" }
+  })
+
+  // FUTURE: pull request to Alfred
+  // read HTTP response from streamFile
+  const streamString = $.NSString.stringWithContentsOfFileEncodingError(streamFile, $.NSUTF8StringEncoding, undefined).js
+
+  // If response looks like proper JSON, it is probably an error
+  if (streamString.startsWith("{")) {
+    try {
+      const errorMessage = JSON.parse(streamString)["error"]["message"]
+
+      if (errorMessage) {
+        // Delete stream files
+        deleteFile(streamFile)
+        deleteFile(pidStreamFile)
+
+        return JSON.stringify({
+          actionoutput: PowerfulMode.get() === "1" ? true : false,
+          response: `[${errorMessage}]`, // Surround in square brackets to look like other errors
+          behaviour: { response: "replacelast" }
+        })
+      }
+
+      throw "Could not determine error message" // Fallback to the catch
+    } catch {
+      // If it's not an error from the API, log file contents
+      console.log(streamString)
+
+      return JSON.stringify({
+        actionoutput: PowerfulMode.get() === "1" ? true : false,
+        response: streamString,
+        behaviour: { response: "replacelast" }
+      })
+    }
+  }
+
+  // Parse streaming response
+  const chunks = streamString
+    .split("\n") // Split into lines
+    .filter(item => item) // Remove empty lines
+    .map(item => item.replace(/^data: /, "")) // Remove extraneous "data: "
+    .flatMap(item => { try { return JSON.parse(item) } catch { return [] } }) // Parse as JSON
+
+  // detect and extract reasoning content
+  let hasReasoningContent = false
+  const reasoningText = chunks
+    .map(item => {
+      let reasoningContent = ""
+
+      const choice = item["choices"]?.[0]
+      const rawReasoningContent = (choice?.["delta"]?.["reasoning_content"] ?? "")
+
+      if (hasReasoningContent) {
+        reasoningContent = rawReasoningContent.replace(/\n$/, "\n> ")
+      } else if (rawReasoningContent.length > 0) {
+        hasReasoningContent = true
+        reasoningContent = rawReasoningContent
+          .replace(/^/, "> ")
+          .replace(/\n$/, "\n> ")
+      }
+
+      return reasoningContent
+    })
+    .join("")
+    .concat(hasReasoningContent ? "\n\n" : "")
+
+  // extract content
+  const contentText = chunks
+    .map(item => {
+      const choice = item["choices"]?.[0]
+      const content = choice?.["delta"]["content"] ?? ""
+      return content
+    })
+    .join("")
+
+  // response to user
+  const responseText = hasReasoningContent ? reasoningText.concat(contentText) : contentText
+
+  // If File not modified for over 5 seconds, connection stalled
+  const stalled = new Date().getTime() - fileModified(streamFile) > 5000
+
+  if (stalled) {
+    // Write incomplete response
+    appendChatHelper(chatFile, reasoningText, contentText)
+
+    // Delete stream files
+    deleteFile(streamFile)
+    deleteFile(pidStreamFile)
+
+    // Stop
+    return JSON.stringify({
+      actionoutput: PowerfulMode.get() === "1" ? true : false,
+      response: `${responseText} [Connection Stalled]`,
+      footer: `You can ask ${AssistantName} to continue the answer`,
+      behaviour: { response: "replacelast", scroll: "end" }
+    })
+  }
+
+  // If file is empty, we were too fast and will try again on next loop
+  if (streamString.length === 0) return JSON.stringify({
+    rerun: 0.1,
+    variables: { streaming_now: true }
+  })
+
+  // Last token finish reason
+  const finishReason = chunks.at(-1)["choices"][0]?.["finish_reason"]
+
+  // If reponse is not finished, continue loop
+  if (!finishReason) return JSON.stringify({
+    rerun: 0.1,
+    variables: { streaming_now: true },
+    response: responseText,
+    behaviour: { response: "replacelast", scroll: "end" }
+  })
+
+  // When finished, write history and delete stream files
+  appendChatHelper(chatFile, reasoningText, contentText)
+  deleteFile(streamFile)
+  deleteFile(pidStreamFile)
+
+  // Mention finish reason in footer
+  const footerText = (function() {
+    switch (finishReason) {
+      case "length": return "Maximum number of tokens reached"
+      case "content_filter": return "Content was omitted due to a flag from content filters"
+    }
+  })()
+
+  // FUTURE: Add token consumption information
+
+  // Stop
+  return JSON.stringify({
+    actionoutput: PowerfulMode.get() === "1" ? true : false,
+    response: responseText,
+    footer: footerText,
+    behaviour: { response: "replacelast", scroll: "end" }
+  })
+}
+
+function run(argv) {
+  PowerfulMode.initFromEnv()
+
+  const typedQuery = argv[0]
+  const maxContext = parseInt(envVar("max_context"))
+
+  const arkAPIKey = envVar("ark_api_key")
+  const arkAPIEndpoint = envVar("ark_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+  const arkTargetModelEndpoint = PowerfulMode.get() === "1" ? envVar("ark_powerful_model_endpoint") : envVar("ark_model_endpoint")
+  const systemPrompt = envVar("system_prompt")
+
+  const chatFile = `${envVar("alfred_workflow_data")}/${AssistantName}_chat.json`
+  const pidStreamFile = `${envVar("alfred_workflow_cache")}/${AssistantName}_pid.txt`
+  const streamFile = `${envVar("alfred_workflow_cache")}/${AssistantName}_stream.txt`
+
+  const streamingNow = envVar("streaming_now") === "1"
+
+  // if streamingNow is true, then continue streaming
+  if (streamingNow) return readArkStream(streamFile, chatFile, pidStreamFile)
+
+  const previousChat = readChat(chatFile)
+
+  // if streamingNow is not set, but streamFile exists, then the window was closed in the middle
+  // reload the session and rerun to restore streaming
+  if (fileExists(streamFile)) return JSON.stringify({
+    rerun: 0.1,
+    variables: { streaming_now: true, stream_marker: true },
+    response: markdownChat(previousChat, true),
+    behaviour: { scroll: "end" }
+  })
+
+  // if the argument is empty, return the previous conversation
+  if (typedQuery.length === 0) {
+    return JSON.stringify({
+      response: markdownChat(previousChat, false),
+      behaviour: { scroll: "end" }
+    })
+  }
+
+  // append new question to chat
+  const appendQuery = { role: "user", content: typedQuery, powerful_mode: PowerfulMode.get() === "1" ? "1" : "0" }
+  const ongoingChat = previousChat.concat(appendQuery)
+  const contextChat = ongoingChat.slice(-maxContext)
+
+  startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile)
+
+  appendChat(chatFile, appendQuery)
+
+  return JSON.stringify({
+    rerun: 0.1,
+    variables: { streaming_now: true, stream_marker: true },
+    response: markdownChat(ongoingChat)
+  })
+}
