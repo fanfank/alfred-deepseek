@@ -727,7 +727,7 @@ kill "${pid_stream}"
 				<key>fontsizing</key>
 				<integer>0</integer>
 				<key>footertext</key>
-				<string>↩ chat · ⌘↩ powerful chat · ⌥↩ start new chat</string>
+				<string>↩ chat · ⌘↩ powerful chat · ⌥↩ start new chat · ⇧↩ Interrupt</string>
 				<key>inputfile</key>
 				<string>deepseek</string>
 				<key>inputtype</key>
