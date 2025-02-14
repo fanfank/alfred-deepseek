@@ -65,7 +65,10 @@ function markdownChat(messages, ignoreLastInterrupted = true) {
 
     if (current["role"] === "user") {
       const userRawMessage = current["content"].split("\n").map(line => `${line}`).join("\n") // support multi-line questions (e.g. via External Trigger)
-      const userMessage = current?.["powerful_mode"] === "1" ? `> ## 💥：${userRawMessage}` : `> ## 💬：${userRawMessage}`// Add style to user message
+      const messageIcon = current?.["powerful_mode"] === "1" ? "💥" : "💬";
+      const userMessage = `> ## ${messageIcon}：${userRawMessage}`
+        .replace(/\n(?!$)/g, "\n>##"); // add style to user message
+
 
       const userTwice = allMessages[index + 1]?.["role"] === "user" // "user" role twice in a row
       const lastMessage = index === allMessages.length - 1 // "user" is last message

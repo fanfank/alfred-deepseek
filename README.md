@@ -28,6 +28,9 @@ Configure the workflow and you are ready to go. 🚀
 Don't forget to add DeepSeek to fallback search!
 ![Fallback Search](./about/fallback_search.png)
 
+### 🔍 Troubleshooting
+1. If you encounter the error "Task not found ......", just click "Automation Task" icon and follow the instructions to install it.
+
 __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/openai-workflow) and modified by fanfank, additional features are added, like reasoning content displaying and switching between models, etc.__ 
 
 ---
@@ -61,5 +64,8 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 
 不要忘记添加 DeepSeek 到默认搜索！
 ![Fallback Search](./about/fallback_search.png)
+
+### 🔍 故障排除
+1. 如果无法正常执行，且在 debug 日志中看到 "Task not found ......" 错误，只需点击 "Automation Task" 图标并按照提示安装即可。
 
 __NOTE: 本项目基于 [openai-workflow](https://github.com/alfredapp/openai-workflow) 修改，添加了推理内容显示和模型切换等功能。__ 
