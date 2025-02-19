@@ -57,6 +57,80 @@ function deleteFile(path) {
   return $.NSFileManager.defaultManager.removeItemAtPathError(path, undefined)
 }
 
+function readChat(path) {
+  const chatString = $.NSString.stringWithContentsOfFileEncodingError(path, $.NSUTF8StringEncoding, undefined).js
+  return JSON.parse(chatString)
+}
+
+function appendChat(path, message) {
+  const ongoingChat = readChat(path).concat(message)
+  const chatString = JSON.stringify(ongoingChat)
+  writeFile(path, chatString)
+}
+
+function appendAssistantChat(path, reasoningText, contentText) {
+  if (!reasoningText && !contentText) return
+  const message = {
+    role: "assistant",
+    reasoning_content: reasoningText ?? "",
+    content: contentText ?? ""
+  }
+  appendChat(path, message)
+}
+
+// extract reasoning content, content and finish reason from streamString
+// if not available, empty string will be set to the corresponding variable
+function extractContentFromStreamString(streamString) {
+  if (streamString.startsWith("{")) return { reasoningText: "", contentText: "", finishReason: "" }
+
+  const chunks = streamString
+    .split("\n") // Split into lines
+    .filter(item => item) // Remove empty lines
+    .map(item => item.replace(/^data: /, "")) // Remove extraneous "data: "
+    .flatMap(item => { try { return JSON.parse(item) } catch { return [] } }) // Parse as JSON
+
+  // detect and extract reasoning content
+  let hasReasoningContent = false
+  const reasoningText = chunks
+    .map(item => {
+      let reasoningContent = ""
+      const choice = item["choices"]?.[0]
+      const rawReasoningContent = (choice?.["delta"]?.["reasoning_content"] ?? "")
+      
+      if (hasReasoningContent) {
+        reasoningContent = rawReasoningContent.replace(/\n$/, "\n> ")
+      } else if (rawReasoningContent.length > 0) {
+        hasReasoningContent = true
+        reasoningContent = rawReasoningContent
+          .replace(/^/, "> ")
+          .replace(/\n$/, "\n> ")
+      }
+      return reasoningContent
+    })
+    .join("")
+    .concat(hasReasoningContent ? "\n\n" : "")
+
+  // extract content
+  const contentText = chunks
+    .map(item => {
+      const choice = item["choices"]?.[0]
+      const content = choice?.["delta"]["content"] ?? ""
+      return content
+    })
+    .join("")
+
+  // get finish reason of the last token
+  const finishReason = chunks.length > 0 
+    ? chunks.at(-1)?.choices?.[0]?.finish_reason ?? ""
+    : ""
+
+  return {
+    reasoningText,
+    contentText,
+    finishReason
+  }
+}
+
 function markdownChat(messages, ignoreLastInterrupted = true) {
   return messages.reduce((accumulator, current, index, allMessages) => {
     if (current["role"] === "assistant") {
@@ -86,14 +160,9 @@ function markdownChat(messages, ignoreLastInterrupted = true) {
 function startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile) {
   $.NSFileManager.defaultManager.createFileAtPathContentsAttributes(streamFile, undefined, undefined) // Create empty file
 
-  const baseMessages = systemPrompt
+  const messages = systemPrompt
     ? [{ role: "system", content: systemPrompt }].concat(contextChat)
     : contextChat
-
-  const messages = baseMessages.map(({ role, content }) => ({
-    role,
-    content,
-  }))
 
   const task = $.NSTask.alloc.init
   const stdout = $.NSPipe.pipe
@@ -114,27 +183,6 @@ function startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, syste
   writeFile(pidStreamFile, task.processIdentifier.toString())
 }
 
-function readChat(path) {
-  const chatString = $.NSString.stringWithContentsOfFileEncodingError(path, $.NSUTF8StringEncoding, undefined).js
-  return JSON.parse(chatString)
-}
-
-function appendChat(path, message) {
-  const ongoingChat = readChat(path).concat(message)
-  const chatString = JSON.stringify(ongoingChat)
-  writeFile(path, chatString)
-}
-
-function appendChatHelper(path, reasoningText, contentText) {
-  if (!reasoningText && !contentText) return
-  const message = {
-    role: "assistant",
-    reasoning_content: reasoningText ?? "",
-    content: contentText ?? ""
-  }
-  appendChat(path, message)
-}
-
 function readArkStream(streamFile, chatFile, pidStreamFile) {
   const streamMarker = envVar("stream_marker") === "1"
 
@@ -146,7 +194,6 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
     behaviour: { response: "append" }
   })
 
-  // FUTURE: pull request to Alfred
   // read HTTP response from streamFile
   const streamString = $.NSString.stringWithContentsOfFileEncodingError(streamFile, $.NSUTF8StringEncoding, undefined).js
 
@@ -180,54 +227,17 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
     }
   }
 
-  // Parse streaming response
-  const chunks = streamString
-    .split("\n") // Split into lines
-    .filter(item => item) // Remove empty lines
-    .map(item => item.replace(/^data: /, "")) // Remove extraneous "data: "
-    .flatMap(item => { try { return JSON.parse(item) } catch { return [] } }) // Parse as JSON
-
-  // detect and extract reasoning content
-  let hasReasoningContent = false
-  const reasoningText = chunks
-    .map(item => {
-      let reasoningContent = ""
-
-      const choice = item["choices"]?.[0]
-      const rawReasoningContent = (choice?.["delta"]?.["reasoning_content"] ?? "")
-
-      if (hasReasoningContent) {
-        reasoningContent = rawReasoningContent.replace(/\n$/, "\n> ")
-      } else if (rawReasoningContent.length > 0) {
-        hasReasoningContent = true
-        reasoningContent = rawReasoningContent
-          .replace(/^/, "> ")
-          .replace(/\n$/, "\n> ")
-      }
-
-      return reasoningContent
-    })
-    .join("")
-    .concat(hasReasoningContent ? "\n\n" : "")
-
-  // extract content
-  const contentText = chunks
-    .map(item => {
-      const choice = item["choices"]?.[0]
-      const content = choice?.["delta"]["content"] ?? ""
-      return content
-    })
-    .join("")
+  const { reasoningText, contentText, finishReason } = extractContentFromStreamString(streamString)
 
   // response to user
-  const responseText = hasReasoningContent ? reasoningText.concat(contentText) : contentText
+  const responseText = reasoningText.concat(contentText)
 
   // If File not modified for over 5 seconds, connection stalled
   const stalled = new Date().getTime() - fileModified(streamFile) > 5000
 
   if (stalled) {
     // Write incomplete response
-    appendChatHelper(chatFile, reasoningText, contentText)
+    appendAssistantChat(chatFile, reasoningText, contentText)
 
     // Delete stream files
     deleteFile(streamFile)
@@ -248,9 +258,6 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
     variables: { streaming_now: true }
   })
 
-  // Last token finish reason
-  const finishReason = chunks.at(-1)["choices"][0]?.["finish_reason"]
-
   // If reponse is not finished, continue loop
   if (!finishReason) return JSON.stringify({
     rerun: 0.1,
@@ -260,7 +267,7 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
   })
 
   // When finished, write history and delete stream files
-  appendChatHelper(chatFile, reasoningText, contentText)
+  appendAssistantChat(chatFile, reasoningText, contentText)
   deleteFile(streamFile)
   deleteFile(pidStreamFile)
 
@@ -283,6 +290,14 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
   })
 }
 
+function flushStreamToChatFile(streamFile, chatFile) {
+  const streamContent = $.NSString.stringWithContentsOfFileEncodingError(streamFile, $.NSUTF8StringEncoding, undefined).js
+  const { reasoningText, contentText, finishReason } = extractContentFromStreamString(streamContent)
+  const interruptedContentText = contentText.concat("\n\n[Answer Interrupted]\n\n")
+
+  appendAssistantChat(chatFile, reasoningText, interruptedContentText)
+}
+
 function run(argv) {
   PowerfulMode.initFromEnv()
 
@@ -299,6 +314,17 @@ function run(argv) {
   const streamFile = `${envVar("alfred_workflow_cache")}/${AssistantName}_stream.txt`
 
   const streamingNow = envVar("streaming_now") === "1"
+  const interrupted = envVar("interrupted") === "1"
+
+  // if in interrupted branch, then flush streamFile content to chatFile
+  if (interrupted) {
+    flushStreamToChatFile(streamFile, chatFile)
+    return JSON.stringify({
+      variables: { streaming_now: false },
+      response: markdownChat(readChat(chatFile), false),
+      behaviour: { scroll: "end" }
+    })
+  }
 
   // if streamingNow is true, then continue streaming
   if (streamingNow) return readArkStream(streamFile, chatFile, pidStreamFile)

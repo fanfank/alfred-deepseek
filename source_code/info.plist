@@ -71,7 +71,7 @@
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>002C36B3-1523-4883-B4A7-507BFDD84CB5</string>
+				<string>505D872A-96D9-484F-90C9-4C4CC542EC4F</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -134,6 +134,32 @@
 			<dict>
 				<key>destinationuid</key>
 				<string>B91F66AA-091D-4B31-A45C-9D9833EBDC6E</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>505D872A-96D9-484F-90C9-4C4CC542EC4F</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>535F9E01-DE82-4E31-B0D3-3FDED62ECB62</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>535F9E01-DE82-4E31-B0D3-3FDED62ECB62</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>002C36B3-1523-4883-B4A7-507BFDD84CB5</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -720,6 +746,29 @@ kill "${pid_stream}"
 		<dict>
 			<key>config</key>
 			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>0</integer>
+				<key>script</key>
+				<string></string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string>deepseek</string>
+				<key>type</key>
+				<integer>8</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>505D872A-96D9-484F-90C9-4C4CC542EC4F</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
 				<key>behaviour</key>
 				<integer>2</integer>
 				<key>fontmode</key>
@@ -835,6 +884,8 @@ kill "${pid_stream}"
 				<false/>
 				<key>variables</key>
 				<dict>
+					<key>interrupted</key>
+					<string>1</string>
 					<key>new_chat</key>
 					<string>0</string>
 					<key>powerful_mode</key>
@@ -863,6 +914,26 @@ kill "${pid_stream}"
 			<string>alfred.workflow.utility.argument</string>
 			<key>uid</key>
 			<string>647632B1-13FB-4815-B83D-01D6EC552841</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argument</key>
+				<string></string>
+				<key>passthroughargument</key>
+				<false/>
+				<key>variables</key>
+				<dict>
+					<key>interrupted</key>
+					<string>0</string>
+				</dict>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.argument</string>
+			<key>uid</key>
+			<string>535F9E01-DE82-4E31-B0D3-3FDED62ECB62</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -906,21 +977,6 @@ kill "${pid_stream}"
 		<dict>
 			<key>config</key>
 			<dict>
-				<key>subtext</key>
-				<string>↩ chat · ⌘↩ powerful chat · ⌥↩ start new chat</string>
-				<key>text</key>
-				<string>Ask DeepSeek: {query}</string>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.trigger.fallback</string>
-			<key>uid</key>
-			<string>FA75D456-6C3E-44DF-9C4C-E29DCD44DB01</string>
-			<key>version</key>
-			<integer>1</integer>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
 				<key>externaltriggerid</key>
 				<string>new_chat</string>
 				<key>passinputasargument</key>
@@ -934,6 +990,21 @@ kill "${pid_stream}"
 			<string>alfred.workflow.output.callexternaltrigger</string>
 			<key>uid</key>
 			<string>690B84E7-2A0F-4A32-84F3-9BFC6DF8F245</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>subtext</key>
+				<string>↩ chat · ⌘↩ powerful chat · ⌥↩ start new chat</string>
+				<key>text</key>
+				<string>Ask DeepSeek: {query}</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.trigger.fallback</string>
+			<key>uid</key>
+			<string>FA75D456-6C3E-44DF-9C4C-E29DCD44DB01</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -1026,7 +1097,7 @@ kill "${pid_stream}"
 			<key>note</key>
 			<string>Stop stream process</string>
 			<key>xpos</key>
-			<real>1990</real>
+			<real>2245</real>
 			<key>ypos</key>
 			<real>165</real>
 		</dict>
@@ -1061,7 +1132,7 @@ kill "${pid_stream}"
 		<key>397A6FF4-2D87-470F-A1C0-3F064150472C</key>
 		<dict>
 			<key>xpos</key>
-			<real>2180</real>
+			<real>2435</real>
 			<key>ypos</key>
 			<real>195</real>
 		</dict>
@@ -1079,6 +1150,22 @@ kill "${pid_stream}"
 			<key>ypos</key>
 			<real>490</real>
 		</dict>
+		<key>505D872A-96D9-484F-90C9-4C4CC542EC4F</key>
+		<dict>
+			<key>note</key>
+			<string>Stop stream process</string>
+			<key>xpos</key>
+			<real>1990</real>
+			<key>ypos</key>
+			<real>300</real>
+		</dict>
+		<key>535F9E01-DE82-4E31-B0D3-3FDED62ECB62</key>
+		<dict>
+			<key>xpos</key>
+			<real>2150</real>
+			<key>ypos</key>
+			<real>330</real>
+		</dict>
 		<key>57A3C540-532F-4121-B901-986C9001BF00</key>
 		<dict>
 			<key>xpos</key>
@@ -1089,7 +1176,7 @@ kill "${pid_stream}"
 		<key>59B9C4F9-73C0-4F87-8033-3764A9D2C4C9</key>
 		<dict>
 			<key>xpos</key>
-			<real>2425</real>
+			<real>2680</real>
 			<key>ypos</key>
 			<real>235</real>
 		</dict>
@@ -1131,7 +1218,7 @@ kill "${pid_stream}"
 		<key>694B369C-27B5-4EA4-A8B0-9BF00A0D820F</key>
 		<dict>
 			<key>xpos</key>
-			<real>2425</real>
+			<real>2680</real>
 			<key>ypos</key>
 			<real>75</real>
 		</dict>
@@ -1201,7 +1288,7 @@ kill "${pid_stream}"
 		<key>E1696E9A-1E20-4A55-A2D2-C0F75F381EE6</key>
 		<dict>
 			<key>xpos</key>
-			<real>2275</real>
+			<real>2530</real>
 			<key>ypos</key>
 			<real>185</real>
 		</dict>
@@ -1358,7 +1445,7 @@ kill "${pid_stream}"
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.1.1</string>
+	<string>1.2.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/fanfank</string>
 </dict>

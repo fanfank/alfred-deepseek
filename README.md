@@ -5,6 +5,8 @@
 ![Powerful mode](./about/powerful_mode.png)
 * Display reasoning content, if available.
 ![Demo Reasoning Content](./about/demo_reasoning_content.gif)
+* Interrupted answer will be preserved in the chat history following by "[Answer Interrupted]".
+![Demo Interrupted Answer](./about/demo_interrupted_content_preservation.gif)
 
 ### 📝 Prerequisites
 Currently DeepSeek official site's quota is limited, so we need to activate the model via volcengine.
@@ -16,6 +18,7 @@ Currently DeepSeek official site's quota is limited, so we need to activate the 
 ![Deploy and use](./about/model_deploy_and_use.png)
 5. Get model endpoints from the following page: https://console.volcengine.com/ark
 ![Model endpoints](./about/model_endpoints_page.png)
+6. Ensure you are using Alfred 5.5 or later.
 
 ### 📦 Installation
 Just double click the artifact named `DeepSeek_by_fanfank_xxxx.alfredworkflow` to install.  
@@ -42,6 +45,8 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 ![Powerful mode](./about/powerful_mode_chn.png)
 * 能显示出推理内容，如果有的话。
 ![Demo Reasoning Content](./about/demo_reasoning_content.gif)
+* 中断的回答会保留在聊天历史中，并附上"[Answer Interrupted]"。
+![Demo Interrupted Answer](./about/demo_interrupted_content_preservation_chn.gif)
 
 ### 📝 前提条件
 目前 DeepSeek 官方网站 OpenAPI 没法充值了，因此我们通过火山引擎来使用 DeepSeek 的模型。
@@ -53,6 +58,7 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 ![Deploy and use](./about/model_deploy_and_use.png)
 5. 从以下页面查看模型 Endpoint：https://console.volcengine.com/ark
 ![Model endpoints](./about/model_endpoints_page.png)
+6. 确保你使用的是 Alfred 5.5 或更高版本。
 
 ### 📦 安装
 双击`DeepSeek_by_fanfank_xxxx.alfredworkflow`文件即可完成安装。
