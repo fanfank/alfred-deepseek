@@ -885,6 +885,26 @@ kill "${pid_stream}"
 				<key>variables</key>
 				<dict>
 					<key>interrupted</key>
+					<string>0</string>
+				</dict>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.argument</string>
+			<key>uid</key>
+			<string>535F9E01-DE82-4E31-B0D3-3FDED62ECB62</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argument</key>
+				<string></string>
+				<key>passthroughargument</key>
+				<false/>
+				<key>variables</key>
+				<dict>
+					<key>interrupted</key>
 					<string>1</string>
 					<key>new_chat</key>
 					<string>0</string>
@@ -914,26 +934,6 @@ kill "${pid_stream}"
 			<string>alfred.workflow.utility.argument</string>
 			<key>uid</key>
 			<string>647632B1-13FB-4815-B83D-01D6EC552841</string>
-			<key>version</key>
-			<integer>1</integer>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>argument</key>
-				<string></string>
-				<key>passthroughargument</key>
-				<false/>
-				<key>variables</key>
-				<dict>
-					<key>interrupted</key>
-					<string>0</string>
-				</dict>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.utility.argument</string>
-			<key>uid</key>
-			<string>535F9E01-DE82-4E31-B0D3-3FDED62ECB62</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -1445,7 +1445,7 @@ kill "${pid_stream}"
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.2.1</string>
+	<string>1.3.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/fanfank</string>
 </dict>

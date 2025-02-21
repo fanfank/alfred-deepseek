@@ -53,8 +53,27 @@ function writeFile(path, text) {
   $(text).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, undefined)
 }
 
+function readFile(path) {
+  return $.NSString.stringWithContentsOfFileEncodingError(path, $.NSUTF8StringEncoding, undefined).js
+}
+
 function deleteFile(path) {
   return $.NSFileManager.defaultManager.removeItemAtPathError(path, undefined)
+}
+
+function killProcess(pid) {
+  const task = $.NSTask.alloc.init
+  task.executableURL = $.NSURL.fileURLWithPath("/bin/kill")
+  task.arguments = [pid.toString()]
+  task.launchAndReturnError(false)
+}
+
+function forcedCleanup(pidStreamFile, streamFile) {
+  const pid = readFile(pidStreamFile).toString().trim()
+  if (pid) killProcess(pid)
+
+  deleteFile(pidStreamFile)
+  deleteFile(streamFile)
 }
 
 function readChat(path) {
@@ -293,7 +312,13 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
 function flushStreamToChatFile(streamFile, chatFile) {
   const streamContent = $.NSString.stringWithContentsOfFileEncodingError(streamFile, $.NSUTF8StringEncoding, undefined).js
   const { reasoningText, contentText, finishReason } = extractContentFromStreamString(streamContent)
-  const interruptedContentText = contentText.concat("\n\n[Answer Interrupted]\n\n")
+
+  let interruptedContentText = contentText
+  if (!finishReason) {
+    interruptedContentText = contentText.concat("\n\n[Answer Interrupted]\n\n")
+  } else if (finishReason !== "stop") {
+    interruptedContentText = contentText.concat(`\n\n[Stop Reason: ${finishReason}]\n\n`)
+  }
 
   appendAssistantChat(chatFile, reasoningText, interruptedContentText)
 }
@@ -329,16 +354,25 @@ function run(argv) {
   // if streamingNow is true, then continue streaming
   if (streamingNow) return readArkStream(streamFile, chatFile, pidStreamFile)
 
-  const previousChat = readChat(chatFile)
-
   // if streamingNow is not set, but streamFile exists, then the window was closed in the middle
-  // reload the session and rerun to restore streaming
-  if (fileExists(streamFile)) return JSON.stringify({
-    rerun: 0.1,
-    variables: { streaming_now: true, stream_marker: true },
-    response: markdownChat(previousChat, true),
-    behaviour: { scroll: "end" }
-  })
+  if (fileExists(streamFile)) {
+    // if user query is empty, continue to display previous streaming content
+    if (typedQuery.length === 0) return JSON.stringify({
+      rerun: 0.1,
+      variables: { streaming_now: true, stream_marker: true },
+      response: markdownChat(readChat(chatFile), true),
+      behaviour: { scroll: "end" }
+    })
+
+    // user query is not empty
+    // flush streamFile content to chatFile before proceeding current query
+    flushStreamToChatFile(streamFile, chatFile)
+
+    // stop previous streaming and remove files
+    forcedCleanup(pidStreamFile, streamFile)
+  }
+
+  const previousChat = readChat(chatFile)
 
   // if the argument is empty, return the previous conversation
   if (typedQuery.length === 0) {
