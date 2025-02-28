@@ -1,6 +1,8 @@
 ### 💡Features
 * Use keyword or fallback search to chat with DeepSeek in alfred:
 ![Demo Keyword invoke](./about/demo_keyword_invoke.gif)
+* Use websearch mode(<kbd>Fn</kbd><kbd>↩&#xFE0E;</kbd>) to get up-to-date information:
+![Demo Websearch Mode](./about/demo_websearch.png)
 * Use powerful mode(<kbd>⌘</kbd><kbd>↩&#xFE0E;</kbd>) to chat:
 ![Powerful mode](./about/powerful_mode.png)
 * Display reasoning content, if available.
@@ -31,6 +33,25 @@ Configure the workflow and you are ready to go. 🚀
 Don't forget to add DeepSeek to fallback search!
 ![Fallback Search](./about/fallback_search.png)
 
+If you want to use WebSearch mode, follow the steps below:
+1. Activate ark web search plugin via this page: https://console.volcengine.com/common-buy/CC_content_plugin
+2. Click into the model you want to use web search plugin with:
+![Select Model](./about/websearch_activation/select_model.png)
+3. Create an app associated with the model:
+![Create App](./about/websearch_activation/create_app.png)
+4. Choose Zero-code mode and One-to-one Chat mode:
+![Choose Zero Code](./about/websearch_activation/choose_zero_code.png)
+![One To One Chat Mode](./about/websearch_activation/one_to_one_chat.png)
+5. Configure your bot as follows:
+![Configure Bot](./about/websearch_activation/configure_bot.png)
+![Configure Bot Advanced](./about/websearch_activation/configure_bot_advanced.png)
+6. Click "Publish" on the upper right corner:
+![Click Publish](./about/websearch_activation/click_publish.png)
+7. Copy bot's endpoint ID and fill into the workflow's configuation page:
+![Copy Bot Endpoint ID](./about/websearch_activation/copy_bot_endpoint_id.png)
+![Fill In Configuration](./about/websearch_activation/fill_in_configuration.png)
+
+
 ### 🔍 Troubleshooting
 1. If you encounter the error "Task not found ......", just click "Automation Task" icon and follow the instructions to install it.
 
@@ -41,6 +62,8 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 ### 💡特性
 * 使用关键词或默认搜索与 DeepSeek 聊天：
 ![Demo Keyword invoke](./about/demo_keyword_invoke_chn.gif)
+* 使用网页搜索模式（<kbd>Fn</kbd><kbd>↩&#xFE0E;</kbd>)获取最新信息：
+![Demo Websearch Mode](./about/demo_websearch_chn.png)
 * 使用强力模式(<kbd>⌘</kbd><kbd>↩&#xFE0E;</kbd>)聊天：
 ![Powerful mode](./about/powerful_mode_chn.png)
 * 能显示出推理内容，如果有的话。
@@ -70,6 +93,25 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 
 不要忘记添加 DeepSeek 到默认搜索！
 ![Fallback Search](./about/fallback_search.png)
+
+如果想要使用网页搜索模式，需要按照以下步骤进行配置：
+1. 通过这个地址开通联网插件：https://console.volcengine.com/common-buy/CC_content_plugin
+2. 点击你想要使用联网插件的模型：
+![Select Model](./about/websearch_activation/select_model_chn.png)
+3. 创建一个与模型关联的应用：
+![Create App](./about/websearch_activation/create_app_chn.png)
+4. 选择零代码模式和一对一聊天应用：
+![Choose Zero Code](./about/websearch_activation/choose_zero_code_chn.png)
+![One To One Chat Mode](./about/websearch_activation/one_to_one_chat_chn.png)
+5. 配置你的 bot，如下：
+![Configure Bot](./about/websearch_activation/configure_bot_chn.png)
+![Configure Bot Advanced](./about/websearch_activation/configure_bot_advanced_chn.png)
+6. 点击右上角的"发布"按钮：
+![Click Publish](./about/websearch_activation/click_publish_chn.png)
+7. 复制 Bot 的 endpoint ID，并将其填写到配置页面中：
+![Copy Bot Endpoint ID](./about/websearch_activation/copy_bot_endpoint_id_chn.png)
+![Fill In Configuration](./about/websearch_activation/fill_in_configuration.png)
+
 
 ### 🔍 故障排除
 1. 如果无法正常执行，且在 debug 日志中看到 "Task not found ......" 错误，只需点击 "Automation Task" 图标并按照提示安装即可。

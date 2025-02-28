@@ -3,7 +3,12 @@
 const AssistantName = "deepseek"
 
 // indicate which model to use
-const PowerfulMode = {
+const Mode = {
+  // Mode constants
+  normalMode: "0",
+  powerfulMode: "1",
+  botMode: "2",
+
   // Private variable, using closure protection
   _mode: "0",
 
@@ -11,7 +16,7 @@ const PowerfulMode = {
   get() {
     return this._mode
   },
-
+  
   // Set internal state only
   set(value) {
     if (typeof value !== 'string') {
@@ -23,12 +28,26 @@ const PowerfulMode = {
 
   // Initialize from environment variable
   initFromEnv() {
-    const envValue = envVar("powerful_mode")
-    if (envValue) {
-      this._mode = envValue
+    const isBotMode = envVar("bot_mode")
+    const isPowerfulMode = envVar("powerful_mode")
+    if (isBotMode === "1") {
+      this._mode = this.botMode
+    } else if (isPowerfulMode === "1") {
+      this._mode = this.powerfulMode
+    } else {
+      this._mode = this.normalMode
     }
     return this._mode
-  }
+  },
+
+  isBotMode() {
+    return this._mode === this.botMode
+  },
+
+  isPowerfulMode() {
+    return this._mode === this.powerfulMode
+  },
+
 }
 
 function envVar(varName) {
@@ -105,7 +124,7 @@ function extractContentFromStreamString(streamString) {
   const chunks = streamString
     .split("\n") // Split into lines
     .filter(item => item) // Remove empty lines
-    .map(item => item.replace(/^data: /, "")) // Remove extraneous "data: "
+    .map(item => item.replace(/^data: ?/, "")) // Remove extraneous "data: "
     .flatMap(item => { try { return JSON.parse(item) } catch { return [] } }) // Parse as JSON
 
   // detect and extract reasoning content
@@ -157,8 +176,9 @@ function markdownChat(messages, ignoreLastInterrupted = true) {
     }
 
     if (current["role"] === "user") {
+      const currentMode = current?.["mode"] ?? current?.["powerful_mode"]
       const userRawMessage = current["content"].split("\n").map(line => `${line}`).join("\n") // support multi-line questions (e.g. via External Trigger)
-      const messageIcon = current?.["powerful_mode"] === "1" ? "💥" : "💬";
+      const messageIcon = currentMode === Mode.botMode ? "🌐" : currentMode == Mode.powerfulMode ? "💥" : "💬";
       const userMessage = `> ## ${messageIcon}：${userRawMessage}`
         .replace(/\n(?!$)/g, "\n>##"); // add style to user message
 
@@ -189,7 +209,7 @@ function startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, syste
   task.executableURL = $.NSURL.fileURLWithPath("/usr/bin/curl")
   task.arguments = [
     arkAPIEndpoint,
-    "--speed-limit", "0", "--speed-time", "5", // Abort stalled connection after a few seconds
+    "--speed-limit", "0", "--speed-time", "10", // Abort stalled connection after a few seconds
     "--silent", "--no-buffer",
     "--header", "Content-Type: application/json",
     "--header", `Authorization: Bearer ${arkAPIKey}`,
@@ -227,7 +247,7 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
         deleteFile(pidStreamFile)
 
         return JSON.stringify({
-          actionoutput: PowerfulMode.get() === "1" ? true : false,
+          actionoutput: Mode.isPowerfulMode() || Mode.isBotMode(),
           response: `[${errorMessage}]`, // Surround in square brackets to look like other errors
           behaviour: { response: "replacelast" }
         })
@@ -239,7 +259,7 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
       console.log(streamString)
 
       return JSON.stringify({
-        actionoutput: PowerfulMode.get() === "1" ? true : false,
+        actionoutput: Mode.isPowerfulMode() || Mode.isBotMode(),
         response: streamString,
         behaviour: { response: "replacelast" }
       })
@@ -251,8 +271,8 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
   // response to user
   const responseText = reasoningText.concat(contentText)
 
-  // If File not modified for over 5 seconds, connection stalled
-  const stalled = new Date().getTime() - fileModified(streamFile) > 5000
+  // If File not modified for over 10 seconds, connection stalled
+  const stalled = new Date().getTime() - fileModified(streamFile) > 10000
 
   if (stalled) {
     // Write incomplete response
@@ -264,7 +284,7 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
 
     // Stop
     return JSON.stringify({
-      actionoutput: PowerfulMode.get() === "1" ? true : false,
+      actionoutput: Mode.isPowerfulMode() || Mode.isBotMode(),
       response: `${responseText} [Connection Stalled]`,
       footer: `You can ask ${AssistantName} to continue the answer`,
       behaviour: { response: "replacelast", scroll: "end" }
@@ -302,7 +322,7 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
 
   // Stop
   return JSON.stringify({
-    actionoutput: PowerfulMode.get() === "1" ? true : false,
+    actionoutput: Mode.isPowerfulMode() || Mode.isBotMode(),
     response: responseText,
     footer: footerText,
     behaviour: { response: "replacelast", scroll: "end" }
@@ -324,14 +344,18 @@ function flushStreamToChatFile(streamFile, chatFile) {
 }
 
 function run(argv) {
-  PowerfulMode.initFromEnv()
+  Mode.initFromEnv()
 
   const typedQuery = argv[0]
   const maxContext = parseInt(envVar("max_context"))
 
   const arkAPIKey = envVar("ark_api_key")
-  const arkAPIEndpoint = envVar("ark_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-  const arkTargetModelEndpoint = PowerfulMode.get() === "1" ? envVar("ark_powerful_model_endpoint") : envVar("ark_model_endpoint")
+  const arkAPIEndpoint = Mode.isBotMode() 
+    ? envVar("ark_bot_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/bots/chat/completions" 
+    : envVar("ark_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+  const arkTargetModelEndpoint = Mode.isBotMode() ? envVar("ark_bot_endpoint") :
+    Mode.isPowerfulMode() && envVar("ark_powerful_model_endpoint") ? envVar("ark_powerful_model_endpoint") : 
+    envVar("ark_model_endpoint")
   const systemPrompt = envVar("system_prompt")
 
   const chatFile = `${envVar("alfred_workflow_data")}/${AssistantName}_chat.json`
@@ -383,7 +407,7 @@ function run(argv) {
   }
 
   // append new question to chat
-  const appendQuery = { role: "user", content: typedQuery, powerful_mode: PowerfulMode.get() === "1" ? "1" : "0" }
+  const appendQuery = { role: "user", content: typedQuery, mode: Mode.get() }
   const ongoingChat = previousChat.concat(appendQuery)
   const contextChat = ongoingChat.slice(-maxContext)
 
