@@ -1437,27 +1437,6 @@ kill "${pid_stream}"
 			<key>config</key>
 			<dict>
 				<key>default</key>
-				<string></string>
-				<key>placeholder</key>
-				<string></string>
-				<key>required</key>
-				<true/>
-				<key>trim</key>
-				<true/>
-			</dict>
-			<key>description</key>
-			<string></string>
-			<key>label</key>
-			<string>Ark API Key</string>
-			<key>type</key>
-			<string>textfield</string>
-			<key>variable</key>
-			<string>ark_api_key</string>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>default</key>
 				<string>deepseek</string>
 				<key>placeholder</key>
 				<string></string>
@@ -1479,6 +1458,32 @@ kill "${pid_stream}"
 			<key>config</key>
 			<dict>
 				<key>default</key>
+				<string>volcengine</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>DeepSeek</string>
+						<string>deepseek</string>
+					</array>
+					<array>
+						<string>Volcengine-Ark</string>
+						<string>volcengine</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Specify which provider is hosting the model, so that alfred-deepseek can run without errors.</string>
+			<key>label</key>
+			<string>Provider</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>provider</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
 				<string></string>
 				<key>placeholder</key>
 				<string></string>
@@ -1490,7 +1495,28 @@ kill "${pid_stream}"
 			<key>description</key>
 			<string></string>
 			<key>label</key>
-			<string>Ark Model Endpoint</string>
+			<string>API Key</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>ark_api_key</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string></string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<true/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>If provider is DeepSeek, you can fill in "deepseek-chat"</string>
+			<key>label</key>
+			<string>Model Endpoint</string>
 			<key>type</key>
 			<string>textfield</string>
 			<key>variable</key>
@@ -1509,9 +1535,9 @@ kill "${pid_stream}"
 				<true/>
 			</dict>
 			<key>description</key>
-			<string>If not filled in, will fallback to Ark Model Endpoint when querying powerful model</string>
+			<string>If provider is DeepSeek, you can fill in "deepseek-reasoner"</string>
 			<key>label</key>
-			<string>Ark Powerful Model Endpoint(Optional)</string>
+			<string>Powerful Model Endpoint(Optional)</string>
 			<key>type</key>
 			<string>textfield</string>
 			<key>variable</key>
@@ -1530,9 +1556,9 @@ kill "${pid_stream}"
 				<true/>
 			</dict>
 			<key>description</key>
-			<string>If you have configured an ark bot, say with web searching capability, you can use this bot by filling in this field.</string>
+			<string>If you have configured an volcengine ark bot, say with web searching capability, you can use this bot by filling in this field.</string>
 			<key>label</key>
-			<string>Ark WebSearch/Bot Endpoint(Optional)</string>
+			<string>WebSearch/Bot Endpoint(Optional)</string>
 			<key>type</key>
 			<string>textfield</string>
 			<key>variable</key>
@@ -1584,6 +1610,31 @@ kill "${pid_stream}"
 			<key>variable</key>
 			<string>system_prompt</string>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>defaultvalue</key>
+				<integer>15</integer>
+				<key>markercount</key>
+				<integer>5</integer>
+				<key>maxvalue</key>
+				<integer>30</integer>
+				<key>minvalue</key>
+				<integer>1</integer>
+				<key>onlystoponmarkers</key>
+				<false/>
+				<key>showmarkers</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>HTTP timedout / File stalled</string>
+			<key>label</key>
+			<string>Timeout Seconds</string>
+			<key>type</key>
+			<string>slider</string>
+			<key>variable</key>
+			<string>timeout_seconds</string>
+		</dict>
 	</array>
 	<key>variables</key>
 	<dict>
@@ -1591,11 +1642,13 @@ kill "${pid_stream}"
 		<string>https://ark.cn-beijing.volces.com/api/v3/chat/completions</string>
 		<key>ark_bot_api_endpoint</key>
 		<string>https://ark.cn-beijing.volces.com/api/v3/bots/chat/completions</string>
+		<key>deepseek_cc_api_endpoint</key>
+		<string>https://api.deepseek.com/chat/completions</string>
 	</dict>
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.4.1</string>
+	<string>1.5.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/fanfank</string>
 </dict>

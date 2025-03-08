@@ -47,7 +47,69 @@ const Mode = {
   isPowerfulMode() {
     return this._mode === this.powerfulMode
   },
+}
 
+// Define a Provider class to manage the provider state
+const Provider = {
+  // Provider constants
+  volcengineProvider: "volcengine",
+  deepseekProvider: "deepseek",
+
+  // Private variable, using closure protection
+  _provider: "",
+
+  // Get current provider
+  get() {
+    return this._provider
+  },
+  
+  // Set internal state only
+  set(value) {
+    if (typeof value !== 'string') {
+      value = String(value)
+    }
+    this._provider = value
+    return this._provider
+  },
+
+  // Initialize from environment variable
+  initFromEnv() {
+    this._provider = envVar("provider")
+    return this._provider
+  },
+
+  isVolcengine() {
+    return this._provider === this.volcengineProvider
+  },
+
+  isDeepseek() {
+    return this._provider === this.deepseekProvider
+  },
+}
+
+// Define a TimeoutSeconds class to manage timeout settings in seconds
+const TimeoutSeconds = {
+  // Default timeout in seconds
+  defaultValue: 10,
+
+  // Private variable for timeout value
+  _value: 10,
+
+  // Get current timeout value
+  get() {
+    return this._value
+  },
+
+  // Initialize from environment variable
+  initFromEnv() {
+    this._value = parseInt(envVar("timeout_seconds") || this.defaultValue.toString())
+    return this._value
+  },
+
+  // Check if a timestamp is stalled
+  isStalled(timestamp) {
+    return new Date().getTime() - timestamp > this._value * 1000
+  }
 }
 
 function envVar(varName) {
@@ -196,24 +258,43 @@ function markdownChat(messages, ignoreLastInterrupted = true) {
   }, "")
 }
 
-function startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile) {
+function startStream(apiEndpoint, apiKey, targetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile) {
   $.NSFileManager.defaultManager.createFileAtPathContentsAttributes(streamFile, undefined, undefined) // Create empty file
 
-  const messages = systemPrompt
-    ? [{ role: "system", content: systemPrompt }].concat(contextChat)
-    : contextChat
+  // remove reasoning_content from contextChat and build messages
+  let messages = (systemPrompt ? [{ role: "system", content: systemPrompt }] : [])
+  let roles = ["user", "assistant"]
+  let roleIndex = 0
+  
+  // be compatible with the deepseek api
+  for (const [index, item] of contextChat.entries()) {
+    let expectRole = roles[roleIndex % 2]
+    let message = { role: item.role, content: item.content } // only preserve role and content
+    
+    if (item.role !== expectRole) {
+      if (expectRole === "user") { // user message is missing, skip this item
+        continue;
+      } else { // assistant message is missing, add an assistant message
+        messages.push({ role: "assistant", content: "" }, message);
+        continue;
+      }
+    }
+    
+    messages.push(message);
+    roleIndex++;
+  }
 
   const task = $.NSTask.alloc.init
   const stdout = $.NSPipe.pipe
 
   task.executableURL = $.NSURL.fileURLWithPath("/usr/bin/curl")
   task.arguments = [
-    arkAPIEndpoint,
-    "--speed-limit", "0", "--speed-time", "10", // Abort stalled connection after a few seconds
+    apiEndpoint,
+    "--speed-limit", "0", "--speed-time", TimeoutSeconds.get().toString(), // Abort stalled connection after timeout
     "--silent", "--no-buffer",
     "--header", "Content-Type: application/json",
-    "--header", `Authorization: Bearer ${arkAPIKey}`,
-    "--data", JSON.stringify({ model: arkTargetModelEndpoint, messages: messages, stream: true }),
+    "--header", `Authorization: Bearer ${apiKey}`,
+    "--data", JSON.stringify({ model: targetModelEndpoint, messages: messages, stream: true }),
     "--output", streamFile
   ]
 
@@ -222,7 +303,7 @@ function startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, syste
   writeFile(pidStreamFile, task.processIdentifier.toString())
 }
 
-function readArkStream(streamFile, chatFile, pidStreamFile) {
+function readStream(streamFile, chatFile, pidStreamFile) {
   const streamMarker = envVar("stream_marker") === "1"
 
   // When starting a stream or continuing from a closed window, add a marker to determine the location of future replacements
@@ -256,8 +337,6 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
       throw "Could not determine error message" // Fallback to the catch
     } catch {
       // If it's not an error from the API, log file contents
-      console.log(streamString)
-
       return JSON.stringify({
         actionoutput: Mode.isPowerfulMode() || Mode.isBotMode(),
         response: streamString,
@@ -271,8 +350,8 @@ function readArkStream(streamFile, chatFile, pidStreamFile) {
   // response to user
   const responseText = reasoningText.concat(contentText)
 
-  // If File not modified for over 10 seconds, connection stalled
-  const stalled = new Date().getTime() - fileModified(streamFile) > 10000
+  // If File not modified for over timeout seconds, connection stalled
+  const stalled = TimeoutSeconds.isStalled(fileModified(streamFile))
 
   if (stalled) {
     // Write incomplete response
@@ -345,17 +424,37 @@ function flushStreamToChatFile(streamFile, chatFile) {
 
 function run(argv) {
   Mode.initFromEnv()
+  Provider.initFromEnv()
+  TimeoutSeconds.initFromEnv()
 
   const typedQuery = argv[0]
   const maxContext = parseInt(envVar("max_context"))
 
-  const arkAPIKey = envVar("ark_api_key")
-  const arkAPIEndpoint = Mode.isBotMode() 
-    ? envVar("ark_bot_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/bots/chat/completions" 
-    : envVar("ark_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-  const arkTargetModelEndpoint = Mode.isBotMode() ? envVar("ark_bot_endpoint") :
-    Mode.isPowerfulMode() && envVar("ark_powerful_model_endpoint") ? envVar("ark_powerful_model_endpoint") : 
-    envVar("ark_model_endpoint")
+  // FUTURE: remove the "ark_" prefix from environment variables, do some compatibility check
+
+  const apiKey = envVar("ark_api_key")
+
+  let apiEndpoint = ""
+  if (Provider.isVolcengine()) {
+    apiEndpoint = Mode.isBotMode() 
+      ? envVar("ark_bot_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/bots/chat/completions" 
+      : envVar("ark_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+  } else if (Provider.isDeepseek()) {
+    apiEndpoint = envVar("deepseek_cc_api_endpoint") || "https://api.deepseek.com/chat/completions"
+  }
+
+  let targetModelEndpoint = ""
+  if (Provider.isVolcengine()) {
+    targetModelEndpoint = Mode.isBotMode() ? envVar("ark_bot_endpoint") :
+      Mode.isPowerfulMode() && envVar("ark_powerful_model_endpoint") ?
+        envVar("ark_powerful_model_endpoint") : 
+        envVar("ark_model_endpoint")
+  } else if (Provider.isDeepseek()) {
+    targetModelEndpoint = Mode.isPowerfulMode() && envVar("ark_powerful_model_endpoint") ?
+      envVar("ark_powerful_model_endpoint") :
+      envVar("ark_model_endpoint")
+  }
+
   const systemPrompt = envVar("system_prompt")
 
   const chatFile = `${envVar("alfred_workflow_data")}/${AssistantName}_chat.json`
@@ -376,7 +475,7 @@ function run(argv) {
   }
 
   // if streamingNow is true, then continue streaming
-  if (streamingNow) return readArkStream(streamFile, chatFile, pidStreamFile)
+  if (streamingNow) return readStream(streamFile, chatFile, pidStreamFile)
 
   // if streamingNow is not set, but streamFile exists, then the window was closed in the middle
   if (fileExists(streamFile)) {
@@ -399,22 +498,20 @@ function run(argv) {
   const previousChat = readChat(chatFile)
 
   // if the argument is empty, return the previous conversation
-  if (typedQuery.length === 0) {
-    return JSON.stringify({
-      response: markdownChat(previousChat, false),
-      behaviour: { scroll: "end" }
-    })
-  }
+  if (typedQuery.length === 0) return JSON.stringify({
+    response: markdownChat(previousChat, false),
+    behaviour: { scroll: "end" }
+  })
 
   // append new question to chat
   const appendQuery = { role: "user", content: typedQuery, mode: Mode.get() }
   const ongoingChat = previousChat.concat(appendQuery)
   const contextChat = ongoingChat.slice(-maxContext)
 
-  startArkStream(arkAPIEndpoint, arkAPIKey, arkTargetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile)
-
+  startStream(apiEndpoint, apiKey, targetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile)
+  
   appendChat(chatFile, appendQuery)
-
+  
   return JSON.stringify({
     rerun: 0.1,
     variables: { streaming_now: true, stream_marker: true },

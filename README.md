@@ -11,7 +11,9 @@
 ![Demo Interrupted Answer](./about/demo_interrupted_content_preservation.gif)
 
 ### 📝 Prerequisites
-Currently DeepSeek official site's quota is limited, so we need to activate the model via volcengine.
+You can use alfred-deepseek with one of these providers: DeepSeek official or Volcengine Ark.
+Currently Volcengine Ark's DeepSeek API's responding speed is much faster.
+If you want to use DeepSeek via Volcengine Ark, please follow the steps below:
 1. Go to https://www.volcengine.com/ , create an account and login:
 2. Create a new api key, you can refer to this page https://www.volcengine.com/docs/82379/1399008;
 3. Create DeepSeek model endpoints via this page https://console.volcengine.com/ark, say DeepSeek-V3 and DeepSeek-R1:
@@ -72,7 +74,9 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 ![Demo Interrupted Answer](./about/demo_interrupted_content_preservation_chn.gif)
 
 ### 📝 前提条件
-目前 DeepSeek 官方网站 OpenAPI 没法充值了，因此我们通过火山引擎来使用 DeepSeek 的模型。
+alfred-deepseek 可以配置以下两个模型供应商的其中一个：DeepSeek 官方或火山方舟。
+当前火山方舟的 DeepSeek 响应速度快很多。
+如果你想通过火山方舟来使用 DeepSeek，则按以下步骤操作：
 1. 前往 https://www.volcengine.com/ ，创建一个账户并登录；
 2. 创建一个新的 API 密钥，可以参考页面 https://www.volcengine.com/docs/82379/1399008；
 3. 在 https://console.volcengine.com/ark 页面创建 DeepSeek 模型 Endpoints，例如 DeepSeek-V3 和 DeepSeek-R1：
@@ -89,7 +93,7 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 ### 🔧 配置
 配置 Workflow，然后就可以开始聊天了。🚀 
 ![Configure Workflow](./about/configure_workflow.png)
-![Configuration Page](./about/configuration_page.png)
+![Configuration Page](./about/configuration_page_chn.png)
 
 不要忘记添加 DeepSeek 到默认搜索！
 ![Fallback Search](./about/fallback_search.png)
@@ -111,7 +115,6 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 7. 复制 Bot 的 endpoint ID，并将其填写到配置页面中：
 ![Copy Bot Endpoint ID](./about/websearch_activation/copy_bot_endpoint_id_chn.png)
 ![Fill In Configuration](./about/websearch_activation/fill_in_configuration.png)
-
 
 ### 🔍 故障排除
 1. 如果无法正常执行，且在 debug 日志中看到 "Task not found ......" 错误，只需点击 "Automation Task" 图标并按照提示安装即可。
