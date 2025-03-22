@@ -7,12 +7,12 @@
 ![Powerful mode](./about/powerful_mode.png)
 * Display reasoning content, if available.
 ![Demo Reasoning Content](./about/demo_reasoning_content.gif)
-* Interrupted answer will be preserved in the chat history following by "[Answer Interrupted]".
+* Interrupted answer will be preserved in the chat history followed by "[Answer Interrupted]".
 ![Demo Interrupted Answer](./about/demo_interrupted_content_preservation.gif)
 
 ### 📝 Prerequisites
 You can use alfred-deepseek with one of these providers: DeepSeek official or Volcengine Ark.
-Currently Volcengine Ark's DeepSeek API's responding speed is much faster.
+Currently Volcengine Ark's DeepSeek API's responding speed is much faster, and Volcengine Ark supports websearch mode while DeepSeek official does not.
 If you want to use DeepSeek via Volcengine Ark, please follow the steps below:
 1. Go to https://www.volcengine.com/ , create an account and login:
 2. Create a new api key, you can refer to this page https://www.volcengine.com/docs/82379/1399008;
@@ -75,7 +75,7 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 
 ### 📝 前提条件
 alfred-deepseek 可以配置以下两个模型供应商的其中一个：DeepSeek 官方或火山方舟。
-当前火山方舟的 DeepSeek 响应速度快很多。
+当前火山方舟的 DeepSeek 响应速度快很多，而且支持联网搜索能力，而 DeepSeek 官方还没开放联网搜索 API。
 如果你想通过火山方舟来使用 DeepSeek，则按以下步骤操作：
 1. 前往 https://www.volcengine.com/ ，创建一个账户并登录；
 2. 创建一个新的 API 密钥，可以参考页面 https://www.volcengine.com/docs/82379/1399008；
