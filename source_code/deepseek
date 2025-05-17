@@ -54,6 +54,7 @@ const Provider = {
   // Provider constants
   volcengineProvider: "volcengine",
   deepseekProvider: "deepseek",
+  openrouterProvider: "openrouter",
 
   // Private variable, using closure protection
   _provider: "",
@@ -84,6 +85,10 @@ const Provider = {
 
   isDeepseek() {
     return this._provider === this.deepseekProvider
+  },
+
+  isOpenrouter() {
+    return this._provider === this.openrouterProvider
   },
 }
 
@@ -142,6 +147,21 @@ function deleteFile(path) {
   return $.NSFileManager.defaultManager.removeItemAtPathError(path, undefined)
 }
 
+function debugLogToFile(...args) {
+  const debugLogFile = `${envVar("alfred_workflow_cache")}/${AssistantName}_debug.txt`
+  const text = args.map(arg => {
+    if (typeof arg === 'object') {
+      try {
+        return JSON.stringify(arg, null, 2)
+      } catch {
+        return String(arg)
+      }
+    }
+    return String(arg)
+  }).join(' ')
+  writeFile(debugLogFile, text)
+}
+
 function killProcess(pid) {
   const task = $.NSTask.alloc.init
   task.executableURL = $.NSURL.fileURLWithPath("/bin/kill")
@@ -183,11 +203,21 @@ function appendAssistantChat(path, reasoningText, contentText) {
 function extractContentFromStreamString(streamString) {
   if (streamString.startsWith("{")) return { reasoningText: "", contentText: "", finishReason: "" }
 
+  let finishReason = ""
+
   const chunks = streamString
     .split("\n") // Split into lines
-    .filter(item => item) // Remove empty lines
+    .filter(item => item && !item.startsWith(": OPENROUTER PROCESSING")) // Remove empty lines and lines starting with ": OPEN..."
     .map(item => item.replace(/^data: ?/, "")) // Remove extraneous "data: "
-    .flatMap(item => { try { return JSON.parse(item) } catch { return [] } }) // Parse as JSON
+    .flatMap(item => { 
+      try { 
+        const res = JSON.parse(item)
+        if (typeof res.choices?.[0]?.finish_reason === 'string' && res.choices[0].finish_reason.length > 0) {
+          finishReason = res.choices[0].finish_reason
+        }
+
+        return res
+      } catch { return [] }}) // Parse as JSON
 
   // detect and extract reasoning content
   let hasReasoningContent = false
@@ -195,15 +225,15 @@ function extractContentFromStreamString(streamString) {
     .map(item => {
       let reasoningContent = ""
       const choice = item["choices"]?.[0]
-      const rawReasoningContent = (choice?.["delta"]?.["reasoning_content"] ?? "")
+      const rawReasoningContent = (choice?.["delta"]?.["reasoning_content"] ?? choice?.["delta"]?.["reasoning"] ?? "")
       
       if (hasReasoningContent) {
-        reasoningContent = rawReasoningContent.replace(/\n$/, "\n> ")
+        reasoningContent = rawReasoningContent.replaceAll("\n", "\n> ")
       } else if (rawReasoningContent.length > 0) {
         hasReasoningContent = true
         reasoningContent = rawReasoningContent
           .replace(/^/, "> ")
-          .replace(/\n$/, "\n> ")
+          .replaceAll("\n", "\n> ")
       }
       return reasoningContent
     })
@@ -218,11 +248,6 @@ function extractContentFromStreamString(streamString) {
       return content
     })
     .join("")
-
-  // get finish reason of the last token
-  const finishReason = chunks.length > 0 
-    ? chunks.at(-1)?.choices?.[0]?.finish_reason ?? ""
-    : ""
 
   return {
     reasoningText,
@@ -441,8 +466,12 @@ function run(argv) {
       : envVar("ark_api_endpoint") || "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
   } else if (Provider.isDeepseek()) {
     apiEndpoint = envVar("deepseek_cc_api_endpoint") || "https://api.deepseek.com/chat/completions"
+  } else if (Provider.isOpenrouter()) {
+    apiEndpoint = envVar("openrouter_api_endpoint") || "https://openrouter.ai/api/v1/chat/completions"
   }
 
+  // sleect model endpoint according to current mode and provider
+  // env name will always be like "ark_xxxx" for compatibility, because no other providers but volcengine at first
   let targetModelEndpoint = ""
   if (Provider.isVolcengine()) {
     targetModelEndpoint = Mode.isBotMode() ? envVar("ark_bot_endpoint") :
@@ -453,10 +482,16 @@ function run(argv) {
     targetModelEndpoint = Mode.isPowerfulMode() && envVar("ark_powerful_model_endpoint") ?
       envVar("ark_powerful_model_endpoint") :
       envVar("ark_model_endpoint")
+  } else if (Provider.isOpenrouter()) {
+    targetModelEndpoint = Mode.isBotMode() ? envVar("ark_bot_endpoint") :
+      Mode.isPowerfulMode() && envVar("ark_powerful_model_endpoint") ?
+        envVar("ark_powerful_model_endpoint") :
+        envVar("ark_model_endpoint")
   }
 
   const systemPrompt = envVar("system_prompt")
-
+  
+  console.log("alfred_workflow_cache dir:", envVar("alfred_workflow_cache"))
   const chatFile = `${envVar("alfred_workflow_data")}/${AssistantName}_chat.json`
   const pidStreamFile = `${envVar("alfred_workflow_cache")}/${AssistantName}_pid.txt`
   const streamFile = `${envVar("alfred_workflow_cache")}/${AssistantName}_stream.txt`

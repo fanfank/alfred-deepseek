@@ -1469,6 +1469,10 @@ kill "${pid_stream}"
 						<string>Volcengine-Ark</string>
 						<string>volcengine</string>
 					</array>
+					<array>
+						<string>OpenRouter</string>
+						<string>openrouter</string>
+					</array>
 				</array>
 			</dict>
 			<key>description</key>
@@ -1644,11 +1648,11 @@ kill "${pid_stream}"
 		<string>https://ark.cn-beijing.volces.com/api/v3/bots/chat/completions</string>
 		<key>deepseek_cc_api_endpoint</key>
 		<string>https://api.deepseek.com/chat/completions</string>
+		<key>openrouter_api_endpoint</key>
+		<string>https://openrouter.ai/api/v1/chat/completions</string>
 	</dict>
-	<key>variablesdontexport</key>
-	<array/>
 	<key>version</key>
-	<string>1.5.1</string>
+	<string>1.6.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/fanfank</string>
 </dict>

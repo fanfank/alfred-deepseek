@@ -17,6 +17,10 @@ Desktop.ini
 *.tmp
 *.bak
 *.swp
+*.local
+
+# alfred
+prefs.plist
 
 # Python
 __pycache__/
