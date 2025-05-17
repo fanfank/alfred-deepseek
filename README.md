@@ -1,15 +1,26 @@
 ### 💡Features
-* Use keyword or fallback search to chat with DeepSeek in alfred:
+* Use keyword or fallback search to chat with DeepSeek / Volcengine-Ark / OpenRouter.ai models in alfred:
+
 ![Demo Keyword invoke](./about/demo_keyword_invoke.gif)
+
 * Use websearch mode(<kbd>Fn</kbd><kbd>↩&#xFE0E;</kbd>) to get up-to-date information:
+
 ![Demo Websearch Mode](./about/demo_websearch.png)
+
 * Use powerful mode(<kbd>⌘</kbd><kbd>↩&#xFE0E;</kbd>) to chat:
+
 ![Powerful mode](./about/powerful_mode.png)
+
 * Display reasoning content, if available.
+
 ![Demo Reasoning Content](./about/demo_reasoning_content.gif)
+
 * Interrupted answer will be preserved in the chat history followed by "[Answer Interrupted]".
+
 ![Demo Interrupted Answer](./about/demo_interrupted_content_preservation.gif)
+
 * Support the following providers:
+
 | Providers | Normal Model | Powerful Mode | Web Search Mode |
 | ------- | :-------: | :-------: | :-------: |
 | [DeepSeek](https://www.deepseek.com/) | ✅ | ✅ | ⛔️ |
@@ -69,17 +80,28 @@ __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/
 ---
 
 ### 💡特性
-* 使用关键词或默认搜索与 DeepSeek 聊天：
+* 使用关键词或默认搜索与 DeepSeek / 火山引擎-方舟 / OpenRouter.ai 的模型聊天：
+
 ![Demo Keyword invoke](./about/demo_keyword_invoke_chn.gif)
+
 * 使用网页搜索模式（<kbd>Fn</kbd><kbd>↩&#xFE0E;</kbd>)获取最新信息：
+
 ![Demo Websearch Mode](./about/demo_websearch_chn.png)
+
 * 使用强力模式(<kbd>⌘</kbd><kbd>↩&#xFE0E;</kbd>)聊天：
+
 ![Powerful mode](./about/powerful_mode_chn.png)
+
 * 能显示出推理内容，如果有的话。
+
 ![Demo Reasoning Content](./about/demo_reasoning_content.gif)
+
 * 中断的回答会保留在聊天历史中，并附上"[Answer Interrupted]"。
+
 ![Demo Interrupted Answer](./about/demo_interrupted_content_preservation_chn.gif)
+
 * 支持以下服务提供商：
+
 | 模型供应商 | 普通模式 | 强力模式 | 联网模式 |
 | ------- | :-------: | :-------: | :-------: |
 | [DeepSeek](https://www.deepseek.com/) | ✅ | ✅ | ⛔️ |
