@@ -39,7 +39,7 @@ If you want to use DeepSeek via Volcengine Ark, please follow the steps below:
 ![Deploy and use](./about/model_deploy_and_use.png)
 5. Get model endpoints from the following page: https://console.volcengine.com/ark
 ![Model endpoints](./about/model_endpoints_page.png)
-6. Ensure you are using Alfred 5.5 or later.
+6. Ensure you are using Alfred 5.5 or later, and Workflows panel in Alfred Preferences is up-to-date.
 
 ### 📦 Installation
 Just double click the artifact named `DeepSeek_by_fanfank_xxxx.alfredworkflow` to install.  
@@ -74,6 +74,7 @@ If you want to use WebSearch mode via Volcengine Ark, follow the steps below:
 
 ### 🔍 Troubleshooting
 1. If you encounter the error "Task not found ......", just click "Automation Task" icon and follow the instructions to install it.
+2. If the UI disappear after you press Enter, go to Alfred Preferences -> Workflows -> DeepSeek, check whether the "Automation Task" is red and says "Task Missing", if so, just click it and update.
 
 __NOTE: this project is based on [openai-workflow](https://github.com/alfredapp/openai-workflow) and modified by fanfank, additional features are added, like reasoning content displaying and switching between models, etc.__ 
 
@@ -120,7 +121,7 @@ alfred-deepseek 可以配置以下三个模型供应商的其中一个：DeepSee
 ![Deploy and use](./about/model_deploy_and_use.png)
 5. 从以下页面查看模型 Endpoint：https://console.volcengine.com/ark
 ![Model endpoints](./about/model_endpoints_page.png)
-6. 确保你使用的是 Alfred 5.5 或更高版本。
+6. 确保你使用的是 Alfred 5.5 或更高版本，并且在 Alfred 的 Preferences 里，Workflows 面板是已经完成更新的。
 
 ### 📦 安装
 双击`DeepSeek_by_fanfank_xxxx.alfredworkflow`文件即可完成安装。
@@ -155,5 +156,6 @@ alfred-deepseek 可以配置以下三个模型供应商的其中一个：DeepSee
 
 ### 🔍 故障排除
 1. 如果无法正常执行，且在 debug 日志中看到 "Task not found ......" 错误，只需点击 "Automation Task" 图标并按照提示安装即可。
+2. 如果按回车后，Alfred 对话框消失了，那可以检查 Preferences(偏好设置) -> Workflows -> DeepSeek，看下有一个叫“Automation Task”的节点，是不是里面的星星颜色是红色的，或者显示了“Task Missing”，如果是的话，点击一下然后更新即可。 
 
 __NOTE: 本项目基于 [openai-workflow](https://github.com/alfredapp/openai-workflow) 修改，添加了推理内容显示和模型切换等功能。__ 
