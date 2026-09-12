@@ -1518,13 +1518,85 @@ kill "${pid_stream}"
 				<true/>
 			</dict>
 			<key>description</key>
-			<string>If provider is DeepSeek, you can fill in "deepseek-chat"</string>
+			<string>If provider is DeepSeek, you can fill in "deepseek-flash"</string>
 			<key>label</key>
 			<string>Model Endpoint</string>
 			<key>type</key>
 			<string>textfield</string>
 			<key>variable</key>
 			<string>ark_model_endpoint</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>disabled</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>On</string>
+						<string>enabled</string>
+					</array>
+					<array>
+						<string>Off</string>
+						<string>disabled</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Enable or disable thinking for this model.</string>
+			<key>label</key>
+			<string>Model Thinking</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>ark_model_thinking</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>medium</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>minimal</string>
+						<string>minimal</string>
+					</array>
+					<array>
+						<string>low</string>
+						<string>low</string>
+					</array>
+					<array>
+						<string>medium</string>
+						<string>medium</string>
+					</array>
+					<array>
+						<string>high</string>
+						<string>high</string>
+					</array>
+					<array>
+						<string>xhigh</string>
+						<string>xhigh</string>
+					</array>
+					<array>
+						<string>max</string>
+						<string>max</string>
+					</array>
+					<array>
+						<string>ultra</string>
+						<string>ultra</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Reasoning effort for OpenAI-compatible requests. Supported levels depend on the model.</string>
+			<key>label</key>
+			<string>Model Reasoning Effort</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>ark_model_reasoning_effort</string>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -1539,13 +1611,85 @@ kill "${pid_stream}"
 				<true/>
 			</dict>
 			<key>description</key>
-			<string>If provider is DeepSeek, you can fill in "deepseek-reasoner"</string>
+			<string>If provider is DeepSeek, you can fill in "deepseek-v4-pro"</string>
 			<key>label</key>
 			<string>Powerful Model Endpoint(Optional)</string>
 			<key>type</key>
 			<string>textfield</string>
 			<key>variable</key>
 			<string>ark_powerful_model_endpoint</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>enabled</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>On</string>
+						<string>enabled</string>
+					</array>
+					<array>
+						<string>Off</string>
+						<string>disabled</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Enable or disable thinking for this model.</string>
+			<key>label</key>
+			<string>Powerful Model Thinking</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>ark_powerful_model_thinking</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>medium</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>minimal</string>
+						<string>minimal</string>
+					</array>
+					<array>
+						<string>low</string>
+						<string>low</string>
+					</array>
+					<array>
+						<string>medium</string>
+						<string>medium</string>
+					</array>
+					<array>
+						<string>high</string>
+						<string>high</string>
+					</array>
+					<array>
+						<string>xhigh</string>
+						<string>xhigh</string>
+					</array>
+					<array>
+						<string>max</string>
+						<string>max</string>
+					</array>
+					<array>
+						<string>ultra</string>
+						<string>ultra</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Reasoning effort for OpenAI-compatible requests. Supported levels depend on the model.</string>
+			<key>label</key>
+			<string>Powerful Model Reasoning Effort</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>ark_powerful_model_reasoning_effort</string>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -1651,8 +1795,10 @@ kill "${pid_stream}"
 		<key>openrouter_api_endpoint</key>
 		<string>https://openrouter.ai/api/v1/chat/completions</string>
 	</dict>
+	<key>variablesdontexport</key>
+	<array/>
 	<key>version</key>
-	<string>1.6.1</string>
+	<string>1.7.0</string>
 	<key>webaddress</key>
 	<string>https://github.com/fanfank</string>
 </dict>

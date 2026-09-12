@@ -283,6 +283,21 @@ function markdownChat(messages, ignoreLastInterrupted = true) {
   }, "")
 }
 
+function modelReasoningOptions() {
+  // Bot endpoints have their own configuration. DeepSeek uses the normal model in bot mode.
+  if (Mode.isBotMode() && !Provider.isDeepseek()) return {}
+
+  const powerful = Mode.isPowerfulMode() && !!envVar("ark_powerful_model_endpoint")
+  const prefix = powerful ? "ark_powerful_model" : "ark_model"
+  const thinking = envVar(`${prefix}_thinking`) || (powerful ? "enabled" : "disabled")
+  const reasoningEffort = envVar(`${prefix}_reasoning_effort`) || "medium"
+
+  return {
+    thinking: { type: thinking },
+    reasoning_effort: reasoningEffort
+  }
+}
+
 function startStream(apiEndpoint, apiKey, targetModelEndpoint, systemPrompt, contextChat, streamFile, pidStreamFile) {
   $.NSFileManager.defaultManager.createFileAtPathContentsAttributes(streamFile, undefined, undefined) // Create empty file
 
@@ -319,7 +334,7 @@ function startStream(apiEndpoint, apiKey, targetModelEndpoint, systemPrompt, con
     "--silent", "--no-buffer",
     "--header", "Content-Type: application/json",
     "--header", `Authorization: Bearer ${apiKey}`,
-    "--data", JSON.stringify({ model: targetModelEndpoint, messages: messages, stream: true }),
+    "--data", JSON.stringify({ model: targetModelEndpoint, messages: messages, stream: true, ...modelReasoningOptions() }),
     "--output", streamFile
   ]
 
